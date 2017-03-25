@@ -1,0 +1,26 @@
+(run
+    (panic)
+
+    (set notes_table (
+        (c 24) (d 26) (e 28) (f 29)
+        (g 31) (a 33) (b 35)
+    ))
+    (set lookup_note (' lookup notes_table #1 #1))
+    (set sharp (' + (lookup_note #1) 1))
+    (set flat (' - (lookup_note #1) 1))
+
+    (set n (' + (lookup_note #1) (* 12 (- #2 1))))
+    (set rest (' : 128 (frac_simp (: #1 #2))))
+    (set t (' : #1 (frac_simp (: #2 #3))))
+
+    (set pattern_length (' run
+        (set fracs (map (' ! #1 1) #1))
+        (set fracsum (fold frac_add fracs))
+        fracsum
+    ))
+
+    (set transpose (' run
+        (set amount #2)
+        (map (' : (+ amount (! #1 0)) (! #1 1)) #1)
+    ))
+)
