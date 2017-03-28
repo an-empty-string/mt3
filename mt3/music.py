@@ -4,23 +4,34 @@ import threading
 import time
 from . import lisp, evaluator
 
-state = {
-    "tempo": 120,
-    "ts": [4, 4]
-}
-
 def play(env, out, notes):
     spb = 60 / env["_music_tempo"]
     t = spb * env["_music_ts"][1]
 
-    for note in notes:
-        print(note)
-        if note[0] > 127:
-            time.sleep(t * note[1][0] / note[1][1])
-            continue
-        out.send(mido.Message('note_on', note=note[0], velocity=100))
-        time.sleep(t * note[1][0] / note[1][1])
-        out.send(mido.Message('note_off', note=note[0]))
+    for notel in notes:
+        if not isinstance(notel[0], list):
+            notel = [notel]
+
+        print(notel)
+
+        notel = [(note[0], t * note[1][0] / note[1][1]) for note in notel]
+        notel.sort(key=lambda note: note[1])
+
+        for note in notel:
+            if note[0] > 127:
+                time.sleep(note[1])
+                continue
+            print("on ", note)
+            out.send(mido.Message('note_on', note=note[0], velocity=100))
+
+        tt = 0
+        for idx, note in enumerate(notel):
+            if note[0] > 127:
+                continue
+            print("off", note)
+            time.sleep(note[1] - tt)
+            out.send(mido.Message('note_off', note=note[0]))
+            tt += note[1]
 
 def clocksetup(env, tempo, ts):
     env["_music_tempo"] = tempo
@@ -52,6 +63,7 @@ def ontick(env, f):
 def music_env(out, env):
     env.update({
         'play': lambda e, notes: threading.Thread(target=play, args=(e, out, notes)).start(),
+        'playf': lambda e, notes: play(e, out, notes),
         'clocksetup': clocksetup,
         'clockstart': clockstart,
         'ontick': ontick,
